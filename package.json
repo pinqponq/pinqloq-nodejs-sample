@@ -1,0 +1,7 @@
+{
+  "name": "pinqloq-nodejs-sample",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sample Node.js project that uses the pinqloq SDK.",
+  "license": "MIT"
+}
