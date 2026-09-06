@@ -3,5 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "description": "Sample Node.js project that uses the pinqloq SDK.",
-  "license": "MIT"
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup:sdk": "node scripts/setup-sdk.mjs",
+    "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
+    "build": "tsc",
+    "start": "node --env-file-if-exists=.env dist/server.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:live": "node scripts/live-test.mjs",
+    "load": "node scripts/load.mjs"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "pinqloq": "file:packages/pinqloq-53c7cfa.tgz"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "^22.0.0",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2"
+  }
 }

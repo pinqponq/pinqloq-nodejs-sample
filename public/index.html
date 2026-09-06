@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>pinqloq · Node.js Lab</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/">pinqloq<span class="brand-dot">.</span></a><span class="divider"></span><span>NODE.JS LAB</span><span class="connection" id="connection">Bağlanıyor…</span></header>
+  <main>
+    <section class="intro"><div><div class="eyebrow">SDK TEST ALANI <span>01 / EXPRESS</span></div><h1>Bir istek at.<br><span>Logun izini sür.</span></h1><p>Gerçek SDK, gerçek teslimat. HTTP olaylarını, manuel logları<br class="desktop"> ve toplu gönderimi tek bir yerden dene.</p></div><div class="flow"><span>UYGULAMA</span><b>enqueue()</b><i>↓</i><span>BELLEK KUYRUĞU</span><b>200 kayıt <em>veya</em> 2 saniye</b><i>↓</i><span>INGEST API</span><b>logs: [ … ] <em>→ RabbitMQ → Panel</em></b></div></section>
+    <div class="config-strip"><span><i class="dot"></i> Sunucu tarafında yapılandırıldı</span><span>HTTP <b id="http-collection">—</b></span><span>MANUEL <b id="manual-collection">—</b></span></div>
+    <div class="workspace">
+      <section class="scenarios"><div class="section-heading"><h2>Senaryolar</h2><span>Yalnızca sentetik veri</span></div>
+        <article class="card"><div class="card-number">01</div><h3>HTTP isteği</h3><p>Yanıt kodunu seç. Middleware isteği otomatik yakalasın.</p><div class="status-buttons"><button data-status="200" class="success">200 <small>OK</small></button><button data-status="400">400 <small>Bad request</small></button><button data-status="401">401 <small>Unauthorized</small></button><button data-status="404">404 <small>Not found</small></button><button data-status="500" class="error">500 <small>Server error</small></button></div></article>
+        <article class="card"><div class="card-number">02</div><h3>Manuel olay</h3><p>Bir backend olayı oluştur; kuyruğa alınmasını ve teslimini izle.</p><div class="manual-row"><label class="sr-only" for="level">Log seviyesi</label><select id="level"><option value="1">Debug</option><option value="2" selected>Information</option><option value="3">Warning</option><option value="4">Error</option><option value="5">Fatal</option></select><button id="manual" class="secondary">Olay gönder <span>↗</span></button></div></article>
+        <article class="card"><div class="card-number">03</div><h3>Hassas veri maskeleme</h3><p>Sahte <code>password</code> ve <code>taxNumber</code> alanlarıyla test et. Sonucu log panelinde incele.</p><div class="redaction-buttons"><button data-redaction="fields">Alanları maskele</button><button data-redaction="endpoint">Tüm endpoint’i maskele</button></div></article>
+        <article class="card load-card"><div class="card-number">04</div><h3>Kuyruğu çalıştır</h3><p>Yarısı HTTP, yarısı manuel. Karışık seviyelerle, en fazla 10 eşzamanlı yerel istek.</p><div class="load-row"><label class="sr-only" for="load-size">Toplam log</label><select id="load-size"><option value="100">100 log</option><option value="1000">1.000 log</option></select><button id="load" class="primary">Yük testini başlat <span>→</span></button></div></article>
+      </section>
+      <section class="results"><div class="section-heading"><h2>Canlı teslimat</h2><span id="run-state" class="state">HAZIR</span></div><div class="results-body">
+        <div class="run-id"><span>TEST RUN / CORRELATION ID</span><div><code id="run-id">Henüz test başlatılmadı</code><button id="copy" title="Test kimliğini kopyala" disabled>Kopyala</button></div></div>
+        <div class="metrics"><div><span>Üretilen</span><strong id="generated">0</strong><small id="planned">log</small></div><div><span>API kabulü</span><strong id="accepted">0</strong><small>acceptedCount</small></div><div><span>Bulk isteği</span><strong id="requests">0</strong><small>HTTP gönderimi</small></div><div><span>Kuyrukta</span><strong id="queued">0</strong><small>gönderilmeyi bekliyor</small></div></div>
+        <div class="progress-track"><div id="progress"></div></div><div class="progress-caption"><span id="progress-caption">İlk senaryonu seçerek başla.</span><button id="stop" disabled>Üretimi durdur</button></div>
+        <div class="table-heading"><h3>Bulk gönderimleri</h3><span id="elapsed">—</span></div><div class="table-scroll"><table><thead><tr><th>Collection</th><th>Log</th><th>Kabul</th><th>HTTP</th><th>Süre</th></tr></thead><tbody id="batches"><tr><td colspan="5" class="empty">Gönderimler burada görünecek.<br><span>Loglar tek tek değil, paketler halinde gönderilir.</span></td></tr></tbody></table></div>
+        <div id="errors" role="alert"></div><p class="panel-note"><span>↗</span> API kabulü, panelde görüntülendiği anlamına gelmez. Yukarıdaki test kimliğiyle <a href="https://pinqloq-panel.pinqponq.io" target="_blank" rel="noreferrer">log panelinde kontrol et</a>.</p>
+      </div><div class="history"><h3>Son testler</h3><div id="history">Bu oturumda henüz test yok.</div></div></section>
+    </div>
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+    <footer><span>pinqloq / developer samples</span><span>Express · TypeScript · 200 kayıt / 2 sn</span></footer>
+  </main>
+</body>
+</html>
