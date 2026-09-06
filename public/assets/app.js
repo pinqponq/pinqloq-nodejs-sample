@@ -1,7 +1,7 @@
 const POLL_INTERVAL_MS = 700;
 const DISCONNECTED_POLL_INTERVAL_MS = 5000;
 const findElement = id => document.getElementById(id);
-const states = { generating: 'ÜRETİLİYOR', draining: 'KUYRUK BOŞALIYOR', complete: 'API KABUL ETTİ', stopped: 'DURDURULDU', failed: 'KONTROL GEREKİYOR' };
+const states = { generating: 'GENERATING', draining: 'DRAINING QUEUE', complete: 'API ACCEPTED', stopped: 'STOPPED', failed: 'REVIEW REQUIRED' };
 let selectedId;
 let runs = [];
 let submitting = false;
@@ -11,7 +11,7 @@ async function requestApi(path, body) {
   const options = body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: serializedBody } : undefined;
   const response = await fetch(path, options);
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'İstek tamamlanamadı.');
+  if (!response.ok) throw new Error(result.error || 'The request could not be completed.');
   return result;
 }
 
@@ -26,30 +26,30 @@ function render() {
     selectedId = run.id;
     setText('run-state', states[run.state]);
     setText('run-id', run.id);
-    setText('generated', run.generated.toLocaleString('tr-TR'));
-    setText('accepted', run.accepted.toLocaleString('tr-TR'));
+    setText('generated', run.generated.toLocaleString('en-US'));
+    setText('accepted', run.accepted.toLocaleString('en-US'));
     setText('requests', run.batches.length);
     setText('queued', run.queued - run.submitted);
-    setText('planned', `/ ${run.planned.toLocaleString('tr-TR')} planlanan`);
+    setText('planned', `/ ${run.planned.toLocaleString('en-US')} planned`);
     findElement('progress').style.width = `${Math.min(100, run.settled / Math.max(1, run.generated) * 100)}%`;
-    setText('progress-caption', run.finishedAt ? `Tamamlandı · ${run.dropped} kuyruk reddi` : run.stopRequested ? 'Üretim duruyor; kuyruktaki loglar gönderilecek.' : run.generationDone ? 'Gönderim ve API yanıtları bekleniyor…' : 'Sentetik loglar üretiliyor…');
+    setText('progress-caption', run.finishedAt ? `Completed · ${run.dropped} queue rejections` : run.stopRequested ? 'Generation is stopping; queued logs will still be delivered.' : run.generationDone ? 'Waiting for delivery and API responses…' : 'Generating synthetic logs…');
     const elapsed = (Date.parse(run.finishedAt || new Date().toISOString()) - Date.parse(run.startedAt)) / 1000;
     setText('elapsed', `${elapsed.toFixed(1)} sn`);
     const body = findElement('batches');
     body.replaceChildren();
     if (!run.batches.length) {
       const row = body.insertRow();
-      const cell = row.insertCell(); cell.colSpan = 5; cell.className = 'empty'; cell.textContent = 'Kuyruk birikiyor. İlk batch bekleniyor…';
+      const cell = row.insertCell(); cell.colSpan = 5; cell.className = 'empty'; cell.textContent = 'Building the queue. Waiting for the first batch…';
     }
     for (const batch of run.batches) {
       const row = body.insertRow();
       for (const value of [batch.collection, batch.count, batch.acceptedCount ?? '—', batch.status ?? '…', batch.durationMs === undefined ? '…' : `${batch.durationMs} ms`]) row.insertCell().textContent = String(value);
     }
-    setText('errors', run.errors.join(' · ') || (run.state === 'failed' ? 'Bazı kayıtların kabulü doğrulanamadı. Batch sonuçlarını incele.' : ''));
+    setText('errors', run.errors.join(' · ') || (run.state === 'failed' ? 'Some records could not be verified. Review the batch results.' : ''));
   }
   const history = findElement('history');
   history.replaceChildren();
-  if (!runs.length) history.textContent = 'Bu oturumda henüz test yok.';
+  if (!runs.length) history.textContent = 'No tests in this session yet.';
   for (const item of runs.slice(0, 5)) {
     const button = document.createElement('button');
     button.textContent = `${item.scenario.kind} · ${item.generated} log — ${states[item.state]}`;
@@ -66,7 +66,7 @@ async function start(scenario) {
 }
 async function refresh() {
   runs = await requestApi('/api/runs');
-  setText('connection', '● Yerel sunucu bağlı');
+  setText('connection', '● Local server connected');
   render();
 }
 document.querySelectorAll('[data-status]').forEach(button => button.onclick = () => start({ kind: 'http', status: Number(button.dataset.status) }));
@@ -74,8 +74,8 @@ document.querySelectorAll('[data-redaction]').forEach(button => button.onclick =
 findElement('manual').onclick = () => start({ kind: 'manual', level: Number(findElement('level').value) });
 findElement('load').onclick = () => start({ kind: 'load', total: Number(findElement('load-size').value) });
 findElement('copy').onclick = async () => {
-  try { await navigator.clipboard.writeText(selectedId); setText('notice', 'Test kimliği kopyalandı.'); }
-  catch (error) { console.warn('Could not copy the test identifier.', error); setText('notice', 'Kopyalanamadı; test kimliğini seçerek kopyalayabilirsin.'); }
+  try { await navigator.clipboard.writeText(selectedId); setText('notice', 'Test identifier copied.'); }
+  catch (error) { console.warn('Could not copy the test identifier.', error); setText('notice', 'Copy failed. Select the test identifier and copy it manually.'); }
 };
 findElement('stop').onclick = async () => {
   const active = runs.find(run => !run.finishedAt);
@@ -87,12 +87,12 @@ try {
   const config = await requestApi('/api/config');
   setText('http-collection', config.httpCollection); setText('manual-collection', config.manualCollection);
   await refresh();
-} catch (error) { console.error('Sample connection failed.', error); setText('connection', 'Bağlantı yok'); setText('notice', error.message); }
+} catch (error) { console.error('Sample connection failed.', error); setText('connection', 'Disconnected'); setText('notice', error.message); }
 async function poll() {
   let nextPollInterval = POLL_INTERVAL_MS;
   try { await refresh(); } catch (error) {
     console.warn('Sample polling failed.', error);
-    setText('connection', 'Sunucuya ulaşılamıyor');
+    setText('connection', 'Server unavailable');
     nextPollInterval = DISCONNECTED_POLL_INTERVAL_MS;
   }
   setTimeout(poll, nextPollInterval);
