@@ -1,12 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, renameSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(root, 'vendor/pinqloq-backend');
 const sdk = resolve(backend, 'sdk/pinqloq-node');
-const expectedCommit = '53c7cfa6f6d3c09403cced2f432ea4680671fd93';
+const expectedCommit = '2302191f1d2af41c5566dc24fe310b4c8a03e64f';
 const packageDirectory = resolve(root, 'packages');
 const packageManagerCandidates = [
   process.env.npm_execpath,
@@ -36,6 +36,9 @@ run('npm', ['ci'], sdk);
 run('npm', ['run', 'build'], sdk);
 mkdirSync(packageDirectory, { recursive: true });
 run('npm', ['pack', '--pack-destination', packageDirectory], sdk);
-renameSync(resolve(packageDirectory, 'pinqloq-1.0.0.tgz'), resolve(packageDirectory, 'pinqloq-53c7cfa.tgz'));
+
+const sdkVersion = JSON.parse(readFileSync(resolve(sdk, 'package.json'), 'utf8')).version;
+const shortCommit = expectedCommit.slice(0, 7);
+renameSync(resolve(packageDirectory, `pinqloq-${sdkVersion}.tgz`), resolve(packageDirectory, `pinqloq-${shortCommit}.tgz`));
 run('npm', ['install']);
 console.log('SDK installed as pinqloq. Commit the archive and package-lock.json together when updating it.');
