@@ -1,6 +1,3 @@
-[submodule "vendor/pinqloq-backend"]
-	path = vendor/pinqloq-backend
-	url = https://github.com/pinqponq/pinqloq-backend.git
 [submodule ".pinq-doq"]
 	path = .pinq-doq
 	url = https://github.com/pinqponq/pinqdoq.git

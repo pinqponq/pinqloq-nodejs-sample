@@ -1,8 +1,8 @@
 # Project guidance
 
-Read `.claude/rules/common.md` before changing sample code. Shared rules and skills are delivered from `.pinq-doq/`; do not edit the delivered copies or either submodule from this repository.
+Read `.claude/rules/common.md` before changing sample code. Shared rules and skills are delivered from `.pinq-doq/`; do not edit the delivered copies or that submodule from this repository.
 
-Use `import ... from "pinqloq"` for SDK integration. The archive in `packages/` is the temporary dependency source until the npm package is published. Do not import SDK implementation files from `vendor/`.
+Use `import ... from "pinqloq"` for SDK integration. `pinqloq` is a normal npm dependency published at [npmjs.com/package/pinqloq](https://www.npmjs.com/package/pinqloq) — never import its implementation files directly, and never vendor or pin it to a git commit again.
 
 Keep credentials in the ignored `.env`. Generate synthetic data only. `npm test` must never send requests to the real ingest service; `npm run test:live` is the explicit live integration command.
 
