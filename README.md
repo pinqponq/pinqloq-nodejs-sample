@@ -57,15 +57,10 @@ The `.env` file is ignored by Git and must never be committed.
 
 ## Install and import Pinqloq
 
-The `pinqloq` package is not yet published to the npm registry. This sample vendors it instead:
-`vendor/pinqloq-backend` is a git submodule pinned to a specific commit of
-[pinqloq-backend](https://github.com/pinqponq/pinqloq-backend) (the SDK's source repo, now merged
-to `main`), and `npm run setup:sdk` builds `sdk/pinqloq-node` from that submodule, packs it into
-`packages/pinqloq-<commit>.tgz`, and points the `pinqloq` dependency in `package.json` at that
-archive. A plain `npm install` (as in [Install the sample](#install-the-sample)) already resolves
-this local dependency — you only need to run `setup:sdk` again after bumping the pinned commit.
-
-Once the SDK is published, any Node.js backend will be able to install it directly:
+The `pinqloq` package is published on npm: [npmjs.com/package/pinqloq](https://www.npmjs.com/package/pinqloq).
+A plain `npm install` (as in [Install the sample](#install-the-sample)) already resolves it —
+no vendoring, submodule, or extra setup step needed. Any other Node.js backend can install it the
+same way:
 
 ```bash
 npm install pinqloq

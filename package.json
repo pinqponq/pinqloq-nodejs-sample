@@ -7,7 +7,6 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "scripts": {
-    "setup:sdk": "node scripts/setup-sdk.mjs",
     "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
     "build": "tsc",
     "start": "node --env-file-if-exists=.env dist/server.js",
@@ -18,7 +17,7 @@
   },
   "dependencies": {
     "express": "5.2.1",
-    "pinqloq": "file:packages/pinqloq-2302191.tgz"
+    "pinqloq": "^1.1.0"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
