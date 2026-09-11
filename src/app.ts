@@ -1,19 +1,27 @@
-import express from 'express';
+import express, { type RequestHandler } from 'express';
+import type { PinqloqClient } from 'pinqloq';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import type { Server } from 'node:http';
 import type { SampleConfig } from './config.js';
+import { validateSessionInput } from './config.js';
 import { observeDelivery } from './delivery.js';
 import { RunStore, parseScenario } from './runs.js';
 import { configurePinqloq } from './pinqloq.js';
 import { generate } from './generate.js';
 import { HttpStatus, SDK_DEFAULTS } from './constants.js';
 
+interface PinqloqSession {
+  client: PinqloqClient | null;
+  httpCollection: string;
+  manualCollection: string;
+  requestLogging: RequestHandler | null;
+}
 
 export async function startSample(config: SampleConfig, transport: typeof fetch = globalThis.fetch) {
   const store = new RunStore();
   const restoreDelivery = observeDelivery(store, transport);
-  const client = configurePinqloq(config, store);
+  const session: PinqloqSession = { client: null, httpCollection: '', manualCollection: '', requestLogging: null };
 
   const internalKey = randomUUID();
   const app = express();
@@ -34,9 +42,33 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
   app.use(express.json({ limit: '8kb' }));
   app.get('/api/config', (_request, response) => {
     response.json({
-      httpCollection: config.httpCollection, manualCollection: config.manualCollection,
+      configured: session.client !== null,
+      httpCollection: session.httpCollection, manualCollection: session.manualCollection,
       ...SDK_DEFAULTS
     });
+  });
+  app.post('/api/session', (request, response) => {
+    let input;
+    try {
+      input = validateSessionInput(request.body);
+    } catch (error) {
+      response.status(HttpStatus.BadRequest).json({ error: (error as Error).message });
+      return;
+    }
+    const previousClient = session.client;
+    const client = configurePinqloq(input, store);
+    session.client = client;
+    session.httpCollection = input.httpCollection;
+    session.manualCollection = input.manualCollection;
+    session.requestLogging = client.requestLogging({
+      excludePaths: ['/api', '/health', '/assets', '/favicon.ico'],
+      redactFields: ['taxNumber', 'x-sample-internal'],
+      redactPaths: ['/demo/redaction/endpoint'],
+      metadata: { testRun: request => request.get('correlation-id') },
+      resolveDeviceIdentifier: request => request.get('correlation-id')
+    });
+    if (previousClient) previousClient.shutdown().catch(error => console.error('Pinqloq: previous client shutdown failed.', error));
+    response.json({ configured: true, httpCollection: input.httpCollection, manualCollection: input.manualCollection });
   });
   app.get('/health', (_request, response) => response.json({ status: 'ready', ingest: store.connection }));
   app.get('/api/runs', (_request, response) => response.json(store.list()));
@@ -46,11 +78,12 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
     response.json(run);
   });
   app.post('/api/runs', (request, response) => {
+    if (!session.client) { response.status(HttpStatus.Unavailable).json({ error: 'Connect the SDK first.' }); return; }
     const scenario = parseScenario(request.body);
     if (!scenario) { response.status(HttpStatus.BadRequest).json({ error: 'Choose a supported test scenario.' }); return; }
     if (store.active) { response.status(HttpStatus.Conflict).json({ error: 'Wait for the current test to drain.' }); return; }
     const run = store.create(scenario);
-    generation = generate(run, { baseUrl, internalKey, manualCollection: config.manualCollection, logger: client.logger, transport }).catch(error => {
+    generation = generate(run, { baseUrl, internalKey, manualCollection: session.manualCollection, logger: session.client.logger, transport }).catch(error => {
       console.error('Sample test generation failed.', error);
       run.errors.push('Test generation failed. Check the server terminal.');
     }).finally(() => {
@@ -72,15 +105,8 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
     }
     next();
   });
-  const requestLogging = client.requestLogging({
-    excludePaths: ['/api', '/health', '/assets', '/favicon.ico'],
-    redactFields: ['taxNumber', 'x-sample-internal'],
-    redactPaths: ['/demo/redaction/endpoint'],
-    metadata: { testRun: request => request.get('correlation-id') },
-    resolveDeviceIdentifier: request => request.get('correlation-id')
-  });
   app.use((request, response, next) => {
-    if (request.path.startsWith('/demo/')) requestLogging(request, response, next);
+    if (request.path.startsWith('/demo/') && session.requestLogging) session.requestLogging(request, response, next);
     else next();
   });
   app.post('/demo/http/:status', (request, response) => {
@@ -105,7 +131,6 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
       listener.once('error', reject);
     });
   } catch (error) {
-    await client.shutdown();
     restoreDelivery();
     throw error;
   }
@@ -121,7 +146,7 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
     shutdown = (async () => {
       await generation;
       await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
-      try { await client.shutdown(); } finally { restoreDelivery(); }
+      try { if (session.client) await session.client.shutdown(); } finally { restoreDelivery(); }
     })();
     return shutdown;
   }

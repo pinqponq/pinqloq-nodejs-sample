@@ -2,63 +2,42 @@
 
 An Express and TypeScript sample application that demonstrates how to integrate the `pinqloq` Node.js SDK into a backend service.
 
-It includes a browser-based test lab for automatic HTTP logging, manual structured events, redaction, buffered bulk delivery, load testing, and delivery metrics. The application generates synthetic data only. Your Pinqloq secret key stays on the server and is never exposed to browser code.
+It includes a browser-based test lab for automatic HTTP logging, manual structured events, redaction, buffered bulk delivery, load testing, and delivery metrics. The application generates synthetic data only.
+
+Your Pinqloq secret key and collection names are entered at runtime in the **Connect** card on the page, sent once to the local server, and held in its process memory for that run only — never written to disk, an `.env` file, or source control. Restart the server and you enter them again.
 
 ## Requirements
 
 - Node.js 22 or later
 - npm
 - A Pinqloq account
-- A Pinqloq project and secret key
-- One collection for automatic HTTP logs
-- One collection for manual events
 
-## Dashboard setup
+## Getting started
 
-1. Sign in to the [Pinqloq dashboard](https://pinqloq.pinqponq.io).
-2. Create a project and copy its secret key.
-3. Create two collections. Suggested names are `pinqloq_node_test_http` and `pinqloq_node_test_manual`.
-4. Keep the secret key in server-side configuration such as an environment variable or secret manager.
-5. To access the live log panel, open **Team Members**, edit your admin or owner account, and set a password of at least eight characters.
-6. View delivered logs in the [Pinqloq log panel](https://pinqloq-panel.pinqponq.io).
+1. **Clone and install.**
+   ```bash
+   git clone https://github.com/pinqponq/pinqloq-nodejs-sample.git
+   cd pinqloq-nodejs-sample
+   npm install
+   ```
+2. **Create a Pinqloq project.** Sign in to the [Pinqloq dashboard](https://pinqloq.pinqponq.io), create a project, and copy its secret key.
+3. **Create two collections** in that project. Suggested names: `pinqloq_node_test_http` and `pinqloq_node_test_manual`.
+4. **Start the sample.**
+   ```bash
+   npm run dev
+   ```
+   Set the `PORT` environment variable first if you need a port other than 3100.
+5. **Open the test lab** at [http://127.0.0.1:3100](http://127.0.0.1:3100). It starts unconnected — no config files, nothing pre-filled.
+6. **Fill in the Connect card** at the top of the page with the secret key and the two collection names, then click **Connect**. This posts once to the local server and is held in its process memory for this run only — never written to disk, an `.env` file, or source control. Restart the server and you enter them again.
+7. **Trigger a scenario** — an HTTP status button, a manual event, or a redaction test — and watch the delivery panel update.
+8. **Check the panel.** Open the [Pinqloq log panel](https://pinqloq-panel.pinqponq.io) (the first time, open **Team Members** in the dashboard, edit your admin/owner account, and set a panel password of at least eight characters), pick your collection, and find the entries by the `testRun` correlation ID shown in the sample.
 
 Never place the secret key in frontend JavaScript, a mobile application, source control, or any file served to users.
-
-## Install the sample
-
-```bash
-git clone https://github.com/pinqponq/pinqloq-nodejs-sample.git
-cd pinqloq-nodejs-sample
-npm install
-```
-
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Configure the server environment:
-
-```env
-PINQLOQ_SECRET_KEY=your-project-secret-key
-PINQLOQ_HTTP_COLLECTION=pinqloq_node_test_http
-PINQLOQ_MANUAL_COLLECTION=pinqloq_node_test_manual
-PORT=3100
-```
-
-The `.env` file is ignored by Git and must never be committed.
 
 ## Install and import Pinqloq
 
 The `pinqloq` package is published on npm: [npmjs.com/package/pinqloq](https://www.npmjs.com/package/pinqloq).
-A plain `npm install` (as in [Install the sample](#install-the-sample)) already resolves it —
+A plain `npm install` (as in [Getting started](#getting-started)) already resolves it —
 no vendoring, submodule, or extra setup step needed. Any other Node.js backend can install it the
 same way:
 
@@ -77,6 +56,8 @@ import {
 ```
 
 ## Configure the SDK
+
+This sample itself creates the client at runtime from the **Connect** card's `POST /api/session` (see `src/pinqloq.ts` / `src/app.ts`) rather than from environment variables, so its secret key is never baked into a file. A typical backend that already knows its credentials at boot usually configures it more simply, at startup:
 
 Create one client when the backend starts and reuse it throughout the application:
 
@@ -242,15 +223,7 @@ process.once("SIGTERM", stop);
 
 Logs still held in memory may be lost if the process exits without graceful shutdown.
 
-## Run the test lab
-
-```bash
-npm run dev
-```
-
-Open [http://127.0.0.1:3100](http://127.0.0.1:3100).
-
-The browser UI provides:
+## What the test lab covers
 
 1. HTTP scenarios returning 200, 400, 401, 404, or 500.
 2. Manual events at Debug, Information, Warning, Error, and Fatal levels.
@@ -263,7 +236,7 @@ The delivery view shows generated entries, API acceptance, bulk request count, q
 
 ## Command-line load tests
 
-With the server running:
+With the server running and connected (fill in the **Connect** card first, or `POST /api/session` yourself):
 
 ```bash
 npm run load -- 100
@@ -281,7 +254,7 @@ npm test
 npm run build
 ```
 
-Automated tests mock the ingest transport and never send data to the live service. They cover configuration validation, collection routing, bulk behavior, status-to-level mapping, redaction, cancellation, partial acceptance, rejected delivery, and graceful shutdown. CI runs the checks on Windows and Linux.
+Automated tests mock the ingest transport and never send data to the live service. They cover session validation (via `POST /api/session`, never exposing a key back), collection routing, bulk behavior, status-to-level mapping, redaction, cancellation, partial acceptance, rejected delivery, and graceful shutdown. CI runs the checks on Windows and Linux.
 
 ## Troubleshooting
 
