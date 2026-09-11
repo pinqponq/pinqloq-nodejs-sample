@@ -2,7 +2,9 @@
 
 An Express and TypeScript sample application that demonstrates how to integrate the `pinqloq` Node.js SDK into a backend service.
 
-It includes a browser-based test lab for automatic HTTP logging, manual structured events, redaction, buffered bulk delivery, load testing, and delivery metrics. The application generates synthetic data only. Your Pinqloq secret key stays on the server and is never exposed to browser code.
+It includes a browser-based test lab for automatic HTTP logging, manual structured events, redaction, buffered bulk delivery, load testing, and delivery metrics. The application generates synthetic data only.
+
+Your Pinqloq secret key and collection names are entered at runtime in the **Connect** card on the page, sent once to the local server, and held in its process memory for that run only — never written to disk, an `.env` file, or source control. Restart the server and you enter them again.
 
 ## Requirements
 
@@ -18,9 +20,8 @@ It includes a browser-based test lab for automatic HTTP logging, manual structur
 1. Sign in to the [Pinqloq dashboard](https://pinqloq.pinqponq.io).
 2. Create a project and copy its secret key.
 3. Create two collections. Suggested names are `pinqloq_node_test_http` and `pinqloq_node_test_manual`.
-4. Keep the secret key in server-side configuration such as an environment variable or secret manager.
-5. To access the live log panel, open **Team Members**, edit your admin or owner account, and set a password of at least eight characters.
-6. View delivered logs in the [Pinqloq log panel](https://pinqloq-panel.pinqponq.io).
+4. To access the live log panel, open **Team Members**, edit your admin or owner account, and set a password of at least eight characters.
+5. View delivered logs in the [Pinqloq log panel](https://pinqloq-panel.pinqponq.io).
 
 Never place the secret key in frontend JavaScript, a mobile application, source control, or any file served to users.
 
@@ -32,28 +33,7 @@ cd pinqloq-nodejs-sample
 npm install
 ```
 
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Configure the server environment:
-
-```env
-PINQLOQ_SECRET_KEY=your-project-secret-key
-PINQLOQ_HTTP_COLLECTION=pinqloq_node_test_http
-PINQLOQ_MANUAL_COLLECTION=pinqloq_node_test_manual
-PORT=3100
-```
-
-The `.env` file is ignored by Git and must never be committed.
+No configuration files. The app starts unconnected — the pinqloq middleware and the manual/redaction routes stay disabled (`/api/config` reports `configured: false`) until you fill in the **Connect** card in the browser. Set the `PORT` environment variable to use a different port than 3100.
 
 ## Install and import Pinqloq
 
@@ -77,6 +57,8 @@ import {
 ```
 
 ## Configure the SDK
+
+This sample itself creates the client at runtime from the **Connect** card's `POST /api/session` (see `src/pinqloq.ts` / `src/app.ts`) rather than from environment variables, so its secret key is never baked into a file. A typical backend that already knows its credentials at boot usually configures it more simply, at startup:
 
 Create one client when the backend starts and reuse it throughout the application:
 
@@ -252,6 +234,7 @@ Open [http://127.0.0.1:3100](http://127.0.0.1:3100).
 
 The browser UI provides:
 
+0. A **Connect** card — enter your secret key and the two collection names to arm the SDK for this run.
 1. HTTP scenarios returning 200, 400, 401, 404, or 500.
 2. Manual events at Debug, Information, Warning, Error, and Fatal levels.
 3. Built-in, custom-field, and complete-endpoint redaction tests.
@@ -263,7 +246,7 @@ The delivery view shows generated entries, API acceptance, bulk request count, q
 
 ## Command-line load tests
 
-With the server running:
+With the server running and connected (fill in the **Connect** card first, or `POST /api/session` yourself):
 
 ```bash
 npm run load -- 100
@@ -281,7 +264,7 @@ npm test
 npm run build
 ```
 
-Automated tests mock the ingest transport and never send data to the live service. They cover configuration validation, collection routing, bulk behavior, status-to-level mapping, redaction, cancellation, partial acceptance, rejected delivery, and graceful shutdown. CI runs the checks on Windows and Linux.
+Automated tests mock the ingest transport and never send data to the live service. They cover session validation (via `POST /api/session`, never exposing a key back), collection routing, bulk behavior, status-to-level mapping, redaction, cancellation, partial acceptance, rejected delivery, and graceful shutdown. CI runs the checks on Windows and Linux.
 
 ## Troubleshooting
 

@@ -12,9 +12,21 @@
   <header class="topbar"><a class="brand" href="/">pinqloq<span class="brand-dot">.</span></a><span class="divider"></span><span>NODE.JS LAB</span><span class="connection" id="connection">Connecting…</span></header>
   <main>
     <section class="intro"><div><div class="eyebrow">SDK TEST LAB <span>01 / EXPRESS</span></div><h1>Send a request.<br><span>Trace the log.</span></h1><p>A real SDK and real delivery. Test HTTP events, manual logs,<br class="desktop"> and bulk delivery from one place.</p></div><div class="flow"><span>APPLICATION</span><b>enqueue()</b><i>↓</i><span>IN-MEMORY QUEUE</span><b>200 entries <em>or</em> 2 seconds</b><i>↓</i><span>INGEST API</span><b>logs: [ … ] <em>→ RabbitMQ → Panel</em></b></div></section>
-    <div class="config-strip"><span><i class="dot"></i> Configured on the server</span><span>HTTP <b id="http-collection">—</b></span><span>MANUAL <b id="manual-collection">—</b></span></div>
+    <div class="config-strip"><span><i class="dot" id="config-dot"></i> <span id="config-state">Checking configuration…</span></span><span>HTTP <b id="http-collection">—</b></span><span>MANUAL <b id="manual-collection">—</b></span></div>
     <div class="workspace">
       <section class="scenarios"><div class="section-heading"><h2>Scenarios</h2><span>Synthetic data only</span></div>
+        <article class="card setup-card"><div class="card-number">00</div><h3>Connect</h3><p>Your secret key and collection names are entered here, kept in server memory for this run only, and never written to disk or source. Restart the server and you re-enter them.</p>
+          <form id="setup-form" class="setup-form" autocomplete="off">
+            <label for="secret-key">Secret key</label>
+            <input type="password" id="secret-key" name="secretKey" placeholder="lgl_…" required />
+            <label for="http-collection-input">HTTP collection</label>
+            <input type="text" id="http-collection-input" name="httpCollection" placeholder="pinqloq_node_test_http" required />
+            <label for="manual-collection-input">Manual collection</label>
+            <input type="text" id="manual-collection-input" name="manualCollection" placeholder="pinqloq_node_test_manual" required />
+            <button type="submit" class="primary">Connect <span>↗</span></button>
+          </form>
+          <p class="setup-error" id="setup-error" role="alert" hidden></p>
+        </article>
         <article class="card"><div class="card-number">01</div><h3>HTTP request</h3><p>Choose a response status and let the middleware capture the request automatically.</p><div class="status-buttons"><button data-status="200" class="success">200 <small>OK</small></button><button data-status="400">400 <small>Bad request</small></button><button data-status="401">401 <small>Unauthorized</small></button><button data-status="404">404 <small>Not found</small></button><button data-status="500" class="error">500 <small>Server error</small></button></div></article>
         <article class="card"><div class="card-number">02</div><h3>Manual event</h3><p>Create a backend event and watch it move through the queue and delivery pipeline.</p><div class="manual-row"><label class="sr-only" for="level">Log level</label><select id="level"><option value="1">Debug</option><option value="2" selected>Information</option><option value="3">Warning</option><option value="4">Error</option><option value="5">Fatal</option></select><button id="manual" class="secondary">Send event <span>↗</span></button></div></article>
         <article class="card"><div class="card-number">03</div><h3>Sensitive data redaction</h3><p>Test with synthetic <code>password</code> and <code>taxNumber</code> fields, then inspect the result in the log panel.</p><div class="redaction-buttons"><button data-redaction="fields">Redact fields</button><button data-redaction="endpoint">Redact entire endpoint</button></div></article>

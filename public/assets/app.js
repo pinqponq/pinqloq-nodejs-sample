@@ -5,6 +5,7 @@ const states = { generating: 'GENERATING', draining: 'DRAINING QUEUE', complete:
 let selectedId;
 let runs = [];
 let submitting = false;
+let configured = false;
 
 async function requestApi(path, body) {
   const serializedBody = body ? JSON.stringify(body) : undefined;
@@ -18,7 +19,7 @@ async function requestApi(path, body) {
 function setText(id, value) { findElement(id).textContent = value; }
 function render() {
   const active = runs.find(run => !run.finishedAt);
-  document.querySelectorAll('[data-status], [data-redaction], #manual, #load').forEach(button => { button.disabled = Boolean(active) || submitting; });
+  document.querySelectorAll('[data-status], [data-redaction], #manual, #load').forEach(button => { button.disabled = Boolean(active) || submitting || !configured; });
   const run = runs.find(item => item.id === selectedId) || active || runs[0];
   findElement('stop').disabled = !active || active.stopRequested || active.generationDone;
   findElement('copy').disabled = !run;
@@ -83,9 +84,41 @@ findElement('stop').onclick = async () => {
   try { await requestApi(`/api/runs/${active.id}/stop`, {}); await refresh(); }
   catch (error) { console.error('Sample action failed.', error); setText('notice', error.message); }
 };
-try {
+async function loadConfig() {
   const config = await requestApi('/api/config');
-  setText('http-collection', config.httpCollection); setText('manual-collection', config.manualCollection);
+  configured = config.configured;
+  setText('http-collection', config.httpCollection || '—'); setText('manual-collection', config.manualCollection || '—');
+  setText('connection', configured ? '● Connected' : 'Not connected');
+  findElement('connection').classList.toggle('connection-off', !configured);
+  findElement('config-dot').classList.toggle('dot-off', !configured);
+  setText('config-state', configured ? 'Connected — held in server memory for this run only' : 'Not connected — enter your secret key in the Connect card');
+  render();
+}
+
+findElement('setup-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+  const errorEl = findElement('setup-error');
+  submitButton.disabled = true;
+  errorEl.hidden = true;
+  try {
+    await requestApi('/api/session', {
+      secretKey: findElement('secret-key').value,
+      httpCollection: findElement('http-collection-input').value,
+      manualCollection: findElement('manual-collection-input').value
+    });
+    findElement('secret-key').value = '';
+    await loadConfig();
+  } catch (error) {
+    errorEl.textContent = error.message;
+    errorEl.hidden = false;
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+try {
+  await loadConfig();
   await refresh();
 } catch (error) { console.error('Sample connection failed.', error); setText('connection', 'Disconnected'); setText('notice', error.message); }
 async function poll() {

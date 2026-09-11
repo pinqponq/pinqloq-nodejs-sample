@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
 import { startSample } from '../src/app.js';
-import { readConfig } from '../src/config.js';
 import type { TestRun } from '../src/runs.js';
 
 interface WireLog {
@@ -13,7 +12,7 @@ interface WireLog {
   detail: Record<string, string>;
 }
 interface WireBatch { collectionName: string; logs: WireLog[] }
-const config = { secretKey: 'test-only-not-a-real-secret', httpCollection: 'sample_http', manualCollection: 'sample_manual', port: 0 };
+const config = { secretKey: 'test-only-not-a-real-secret', httpCollection: 'sample_http', manualCollection: 'sample_manual' };
 const networkFetch = globalThis.fetch;
 const MASK = '*****REDACTED*****';
 
@@ -28,7 +27,9 @@ async function fixture(reply?: (batch: WireBatch) => Promise<Response>) {
     if (reply) return reply(batch);
     return Response.json({ accepted: true, acceptedCount: batch.logs.length });
   };
-  const sample = await startSample(config, transport);
+  const sample = await startSample({ port: 0 }, transport);
+  const session = await post(sample.baseUrl, '/api/session', config);
+  assert.equal(session.status, 200);
   return { ...sample, batches };
 }
 
@@ -46,9 +47,16 @@ async function waitForRun(baseUrl: string, id: string): Promise<TestRun> {
   throw new Error('Run did not finish within the test deadline.');
 }
 
-test('configuration fails fast without credentials or distinct collections', () => {
-  assert.throws(() => readConfig({}), /PINQLOQ_SECRET_KEY/);
-  assert.throws(() => readConfig({ PINQLOQ_SECRET_KEY: 'fake' }), /two distinct/);
+test('session setup fails fast without credentials or distinct collections', async () => {
+  const sample = await startSample({ port: 0 });
+  try {
+    const missing = await post(sample.baseUrl, '/api/session', { secretKey: '', httpCollection: 'a', manualCollection: 'b' });
+    assert.equal(missing.status, 400);
+    const same = await post(sample.baseUrl, '/api/session', { secretKey: 'fake', httpCollection: 'a', manualCollection: 'a' });
+    assert.equal(same.status, 400);
+    const configResponse = await (await fetch(`${sample.baseUrl}/api/config`)).json();
+    assert.equal(configResponse.configured, false);
+  } finally { await sample.close(); }
 });
 
 test('UI, health and polling do not produce logs or expose credentials', async () => {
