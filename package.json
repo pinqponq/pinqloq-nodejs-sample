@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "express": "5.2.1",
-    "pinqloq": "^1.1.0"
+    "pinqloq": "^1.2.0"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
