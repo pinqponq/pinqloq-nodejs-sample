@@ -64,7 +64,7 @@ Create one client when the backend starts and reuse it throughout the applicatio
 ```ts
 import { createPinqloq } from "pinqloq";
 
-const pinqloq = createPinqloq({
+const pinqloqClient = createPinqloq({
   secretKey: process.env.PINQLOQ_SECRET_KEY!,
   apiLogsCollectionName: process.env.PINQLOQ_HTTP_COLLECTION!,
   deviceIdentifier: "orders-api",
@@ -89,7 +89,7 @@ const app = express();
 
 app.use(express.json());
 app.use(
-  pinqloq.requestLogging({
+  pinqloqClient.requestLogging({
     excludePaths: ["/health", "/assets"],
     resolveDeviceIdentifier: request =>
       request.get("device-identifier") ?? "orders-api",
@@ -115,7 +115,7 @@ The middleware reads `correlation-id` and `device-identifier` headers when prese
 
 ## Manual structured logging
 
-Use `logger.enqueue` for business events, exceptions, jobs, and events outside the HTTP request lifecycle:
+Use `pinqloqClient.enqueue` for business events, exceptions, jobs, and events outside the HTTP request lifecycle:
 
 ```ts
 import {
@@ -123,7 +123,7 @@ import {
   PinqloqLogSourceType
 } from "pinqloq";
 
-pinqloq.logger.enqueue(
+pinqloqClient.enqueue(
   {
     event: "order.created",
     logLevel: PinqloqLogLevel.Information,
@@ -151,7 +151,7 @@ pinqloq.logger.enqueue(
 Use `enqueueMany` when events are already available as a list:
 
 ```ts
-const acceptedCount = pinqloq.logger.enqueueMany([
+const acceptedCount = pinqloqClient.enqueueMany([
   { event: "job.started", deviceIdentifier: "worker-1" },
   { event: "job.completed", deviceIdentifier: "worker-1" }
 ]);
@@ -165,7 +165,7 @@ Use `redactFields` for domain-specific sensitive fields:
 
 ```ts
 app.use(
-  pinqloq.requestLogging({
+  pinqloqClient.requestLogging({
     redactFields: ["taxNumber", "patientId"]
   })
 );
@@ -175,7 +175,7 @@ Use `redactPaths` when an endpoint should have every captured value masked:
 
 ```ts
 app.use(
-  pinqloq.requestLogging({
+  pinqloqClient.requestLogging({
     redactPaths: ["/payments", "/password-reset"]
   })
 );
@@ -213,7 +213,7 @@ Wait for `shutdown()` before terminating the process. It drains queued and in-fl
 
 ```ts
 async function stop(): Promise<void> {
-  await pinqloq.shutdown();
+  await pinqloqClient.shutdown();
   process.exit(0);
 }
 
