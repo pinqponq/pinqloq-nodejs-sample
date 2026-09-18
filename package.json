@@ -5,7 +5,9 @@
   "description": "Sample Node.js project that uses the pinqloq SDK.",
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
     "build": "tsc",
@@ -17,7 +19,7 @@
   },
   "dependencies": {
     "express": "5.2.1",
-    "pinqloq": "^1.2.0"
+    "pinqloq": "^1.2.1"
   },
   "devDependencies": {
     "@types/express": "5.0.6",

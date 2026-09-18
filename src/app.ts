@@ -9,7 +9,7 @@ import { observeDelivery } from './delivery.js';
 import { RunStore, parseScenario } from './runs.js';
 import { configurePinqloq } from './pinqloq.js';
 import { generate } from './generate.js';
-import { HttpStatus, SDK_DEFAULTS } from './constants.js';
+import { HttpStatus, SAMPLE_DEVICE, SDK_DEFAULTS } from './constants.js';
 
 interface PinqloqSession {
   client: PinqloqClient | null;
@@ -65,7 +65,7 @@ export async function startSample(config: SampleConfig, transport: typeof fetch 
       redactFields: ['taxNumber', 'x-sample-internal'],
       redactPaths: ['/demo/redaction/endpoint'],
       metadata: { testRun: request => request.get('correlation-id') },
-      resolveDeviceIdentifier: request => request.get('correlation-id')
+      resolveDeviceIdentifier: request => request.get('correlation-id') ?? SAMPLE_DEVICE
     });
     if (previousClient) previousClient.shutdown().catch(error => console.error('Pinqloq: previous client shutdown failed.', error));
     response.json({ configured: true, httpCollection: input.httpCollection, manualCollection: input.manualCollection });

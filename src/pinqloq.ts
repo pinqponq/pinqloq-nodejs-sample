@@ -1,13 +1,12 @@
 import { createPinqloq } from 'pinqloq';
 import type { PinqloqSessionInput } from './config.js';
 import type { RunStore } from './runs.js';
-import { SAMPLE_DEVICE, SAMPLE_VERSION } from './constants.js';
+import { SAMPLE_VERSION } from './constants.js';
 
 export function configurePinqloq(input: PinqloqSessionInput, store: RunStore) {
   const client = createPinqloq({
     secretKey: input.secretKey,
     apiLogsCollectionName: input.httpCollection,
-    deviceIdentifier: SAMPLE_DEVICE,
     appVersionName: SAMPLE_VERSION
   });
   const originalEnqueue = client.logger.enqueue.bind(client.logger);
