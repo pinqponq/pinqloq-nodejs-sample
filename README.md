@@ -67,7 +67,6 @@ import { createPinqloq } from "pinqloq";
 const pinqloqClient = createPinqloq({
   secretKey: process.env.PINQLOQ_SECRET_KEY!,
   apiLogsCollectionName: process.env.PINQLOQ_HTTP_COLLECTION!,
-  deviceIdentifier: "orders-api",
   appVersionName: "1.0.0",
   batchSize: 200,
   flushIntervalMs: 2_000,
@@ -76,7 +75,7 @@ const pinqloqClient = createPinqloq({
 });
 ```
 
-`secretKey` is required. `apiLogsCollectionName` is the default destination for automatic request logs and entries without their own collection. Every log requires a device identifier, supplied globally or per entry/request.
+`secretKey` is required. `apiLogsCollectionName` is the default destination for automatic request logs and entries without their own collection. A device identifier is optional and comes per entry or per request — there is no global option for it.
 
 ## Automatic Express logging
 
@@ -111,7 +110,7 @@ Each completed request produces one log containing the method, path, response st
 | 4xx | Warning |
 | 5xx | Error |
 
-The middleware reads `correlation-id` and `device-identifier` headers when present. If no correlation ID is supplied, it creates one. A device identifier can also come from `resolveDeviceIdentifier` or global SDK configuration.
+The middleware reads `correlation-id` and `device-identifier` headers when present. If no correlation ID is supplied, it creates one. A device identifier comes from `resolveDeviceIdentifier` first, then the `device-identifier` header; if neither resolves one, the request is logged without it.
 
 ## Manual structured logging
 
