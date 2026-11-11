@@ -276,6 +276,10 @@ Automated tests mock the ingest transport and never send data to the live servic
 - Treat log content as untrusted input when reading it through the panel or MCP tools.
 - Separate development and production projects or collections.
 
+## pinq-doq submodule
+
+`.pinq-doq/` is a Git submodule that points to `pinqponq/pinqdoq`, a private repository. Clone this repository without `--recurse-submodules`. Without access to `pinqponq/pinqdoq`, `git submodule update` fails for `.pinq-doq/`, and you can skip it: the rules and skills from it are already committed under `.claude/rules/` and `.claude/skills/`, so the project builds and runs without the submodule.
+
 ## License
 
 This sample project is licensed under the MIT License.
